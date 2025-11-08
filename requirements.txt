@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+textdistance
+requests
+beautifulsoup4

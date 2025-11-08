@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plagiarism Checker</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+        .percentimg { display: none; text-align: center; margin-top: 20px; }
+        #percent { font-weight: bold; font-size: 18px; margin-top: 10px; }
+        #resultList { margin-top: 15px; }
+        .tbox { display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="container">
+        <h2 id="title">Plagiarism Checker</h2>
+        <div id="mainbox">
+
+            <div class="row">
+                <div class="col-md-6">
+                    <p>OR Select a file: (.docx/.txt)</p>
+                    <span class="btn btn-success fileinput-button">
+                        Select file
+                        <input type="file" multiple="" name="files[]" id="fileupload" />
+                    </span>
+                </div>
+
+                <div class="col-md-6">
+                    <p>OR Paste your URL here</p>
+                    <input id="myurl" class="form-control" type="text" placeholder="Enter your URL" />
+                </div>
+            </div>
+
+            <div class="progress mt-3" id="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"></div>
+            </div>
+
+            <p class="mt-3">Paste (Ctrl + V) your article below then click Check for Plagiarism!</p>
+            <textarea id="mycontent" name="data" rows="8" class="form-control"></textarea>
+
+            <div class="tbox mt-2">
+                <div class="max-text">Maximum <span id="max_words_limit">2000</span> words per search.</div>
+                <div class="total-word">Total Words: <span id="words-count">0</span></div>
+            </div>
+
+            <!-- reCAPTCHA -->
+            <div id="reCapCode" class="captchaCode mt-3">
+                <script src="https://www.google.com/recaptcha/api.js"></script>
+                <label>Image Verification *</label>
+                <div class="g-recaptcha" data-sitekey="6LeZxGAUAAAAAFca5ZYkUqCXqjTY4KCGBV6tRk6Q"></div>
+            </div>
+
+            <div class="text-center mt-3">
+                <a class="btn btn-info" style="cursor:pointer;" id="checkButton">Check for Plagiarism</a>
+            </div>
+        </div>
+
+        <!-- Loading GIF -->
+        <div class="percentimg">
+            <img src="https://nimtools.com/theme/default/img/load.gif" />
+            <br />Checking...<br />
+        </div>
+
+        <!-- Results -->
+        <div class="percentbox" id="percent"></div>
+        <table class="table table-bordered" id="resultList"></table>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.getElementById("checkButton").addEventListener("click", async function() {
+            const text = document.getElementById("mycontent").value;
+
+            if (!text.trim()) {
+                alert("Please enter text to check!");
+                return;
+            }
+
+            // Show loading
+            document.getElementById("percent").innerText = "Checking...";
+            document.querySelector(".percentimg").style.display = "block";
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/check", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: text })
+                });
+
+                const result = await response.json();
+
+                // Hide loading
+                document.querySelector(".percentimg").style.display = "none";
+
+                // Show plagiarism percent
+                document.getElementById("percent").innerText =
+                    "Plagiarism Detected: " + result.percent + "%";
+
+                // Show results table
+                document.getElementById("resultList").innerHTML = result.table_html;
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("There was an error connecting to the API.");
+                document.querySelector(".percentimg").style.display = "none";
+            }
+        });
+
+        // Word count update
+        const textarea = document.getElementById("mycontent");
+        const wordCountSpan = document.getElementById("words-count");
+        const maxWords = 2000;
+
+        textarea.addEventListener("input", () => {
+            const words = textarea.value.trim().split(/\s+/).filter(w => w.length > 0);
+            wordCountSpan.innerText = words.length;
+            if (words.length > maxWords) {
+                textarea.value = words.slice(0, maxWords).join(" ");
+                wordCountSpan.innerText = maxWords;
+                alert("Maximum word limit reached!");
+            }
+        });
+    </script>
+<script src="script.js"></script>
+
+</body>
+</html>
